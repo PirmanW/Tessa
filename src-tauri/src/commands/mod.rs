@@ -1,5 +1,7 @@
 pub mod audio;
 pub mod history;
+#[cfg(feature = "local-llm")]
+pub mod llm;
 pub mod models;
 pub mod transcription;
 
