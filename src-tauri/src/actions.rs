@@ -555,6 +555,14 @@ impl ShortcutAction for TranscribeAction {
                                 let _ = ah.emit("local-llm-processing-completed", ());
                             }
 
+                            // Track cleaned text for history
+                            let cleaned_text: Option<String> =
+                                if settings.local_llm_enabled && final_text != transcription {
+                                    Some(final_text.clone())
+                                } else {
+                                    None
+                                };
+
                             // Then apply LLM post-processing if this is the post-process hotkey
                             // Uses final_text which may already have Chinese conversion applied
                             if post_process {
@@ -592,6 +600,7 @@ impl ShortcutAction for TranscribeAction {
                                     .save_transcription(
                                         samples_clone,
                                         transcription_for_history,
+                                        cleaned_text,
                                         post_processed_text,
                                         post_process_prompt,
                                     )
