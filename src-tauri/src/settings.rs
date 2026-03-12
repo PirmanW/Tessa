@@ -128,6 +128,30 @@ pub enum ModelUnloadTimeout {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "snake_case")]
+pub enum LocalLlmMode {
+    Embedded,
+    External,
+}
+
+impl Default for LocalLlmMode {
+    fn default() -> Self {
+        LocalLlmMode::Embedded
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+pub struct LlmModelInfo {
+    pub id: String,
+    pub name: String,
+    pub filename: String,
+    pub size_mb: u64,
+    pub is_downloaded: bool,
+    pub is_downloading: bool,
+    pub is_custom: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[serde(rename_all = "snake_case")]
 pub enum PasteMethod {
     CtrlV,
     Direct,
@@ -362,6 +386,27 @@ pub struct AppSettings {
     pub external_script_path: Option<String>,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
+    // Local LLM
+    #[serde(default)]
+    pub local_llm_enabled: bool,
+    #[serde(default)]
+    pub local_llm_mode: LocalLlmMode,
+    #[serde(default)]
+    pub local_llm_model_id: Option<String>,
+    #[serde(default)]
+    pub local_llm_gpu_layers: u32,
+    #[serde(default)]
+    pub local_llm_unload_timeout: ModelUnloadTimeout,
+    #[serde(default = "default_local_llm_external_url")]
+    pub local_llm_external_url: String,
+    #[serde(default)]
+    pub local_llm_external_model: Option<String>,
+    #[serde(default)]
+    pub local_llm_external_api_key: Option<String>,
+    #[serde(default = "default_local_llm_prompts")]
+    pub local_llm_prompts: Vec<LLMPrompt>,
+    #[serde(default)]
+    pub local_llm_selected_prompt_id: Option<String>,
 }
 
 fn default_model() -> String {
@@ -572,6 +617,18 @@ fn default_typing_tool() -> TypingTool {
     TypingTool::Auto
 }
 
+fn default_local_llm_external_url() -> String {
+    "http://localhost:8080/v1".to_string()
+}
+
+fn default_local_llm_prompts() -> Vec<LLMPrompt> {
+    vec![LLMPrompt {
+        id: "default_local_cleanup".to_string(),
+        name: "Clean Transcription".to_string(),
+        prompt: "Clean this voice transcription: remove repetitions, hesitations and duplicate words. Fix punctuation. Do not change the meaning. Keep the original language. Return only the corrected text.\n\nTranscription: ${output}".to_string(),
+    }]
+}
+
 fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
     let mut changed = false;
     for provider in default_post_process_providers() {
@@ -623,6 +680,27 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
                 changed = true;
             }
         }
+    }
+
+    changed
+}
+
+pub fn ensure_local_llm_defaults(settings: &mut AppSettings) -> bool {
+    let mut changed = false;
+
+    if settings.local_llm_prompts.is_empty() {
+        settings.local_llm_prompts = default_local_llm_prompts();
+        changed = true;
+    }
+
+    if settings.local_llm_selected_prompt_id.is_none() && !settings.local_llm_prompts.is_empty() {
+        settings.local_llm_selected_prompt_id = Some(settings.local_llm_prompts[0].id.clone());
+        changed = true;
+    }
+
+    if settings.local_llm_external_url.is_empty() {
+        settings.local_llm_external_url = default_local_llm_external_url();
+        changed = true;
     }
 
     changed
@@ -727,6 +805,16 @@ pub fn get_default_settings() -> AppSettings {
         typing_tool: default_typing_tool(),
         external_script_path: None,
         custom_filler_words: None,
+        local_llm_enabled: false,
+        local_llm_mode: LocalLlmMode::default(),
+        local_llm_model_id: None,
+        local_llm_gpu_layers: 0,
+        local_llm_unload_timeout: ModelUnloadTimeout::Never,
+        local_llm_external_url: default_local_llm_external_url(),
+        local_llm_external_model: None,
+        local_llm_external_api_key: None,
+        local_llm_prompts: default_local_llm_prompts(),
+        local_llm_selected_prompt_id: None,
     }
 }
 
@@ -797,7 +885,11 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    let mut needs_save = ensure_post_process_defaults(&mut settings);
+    if ensure_local_llm_defaults(&mut settings) {
+        needs_save = true;
+    }
+    if needs_save {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
@@ -821,7 +913,11 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
         default_settings
     };
 
-    if ensure_post_process_defaults(&mut settings) {
+    let mut needs_save = ensure_post_process_defaults(&mut settings);
+    if ensure_local_llm_defaults(&mut settings) {
+        needs_save = true;
+    }
+    if needs_save {
         store.set("settings", serde_json::to_value(&settings).unwrap());
     }
 
