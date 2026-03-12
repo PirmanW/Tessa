@@ -12,6 +12,7 @@
     "models": "Modèles",
     "advanced": "Avancé",
     "postProcessing": "Post-traitement",
+    "localLlm": "IA locale",
     "history": "Historique",
     "debug": "Débogage",
     "about": "À propos"
@@ -230,7 +231,8 @@
         "output": "Sortie",
         "transcription": "Transcription",
         "history": "Historique",
-        "experimental": "Expérimental"
+        "experimental": "Expérimental",
+        "localLlm": "IA locale"
       },
       "experimentalToggle": {
         "label": "Fonctionnalités Expérimentales",
@@ -382,6 +384,68 @@
         "cancel": "Annuler",
         "selectToEdit": "Sélectionnez un prompt ci-dessus pour voir et modifier ses détails.",
         "createFirst": "Cliquez sur 'Créer un nouveau prompt' ci-dessus pour créer votre premier prompt de post-traitement."
+      }
+    },
+    "localLlm": {
+      "title": "IA locale",
+      "mode": {
+        "label": "Mode",
+        "embedded": "Embarqué",
+        "external": "Serveur externe"
+      },
+      "model": {
+        "title": "Modèle",
+        "select": "Sélectionner le modèle",
+        "download": "Télécharger",
+        "downloading": "Téléchargement...",
+        "delete": "Supprimer",
+        "import": "Importer un modèle GGUF",
+        "noModels": "Aucun modèle téléchargé",
+        "recommended": "Modèles recommandés",
+        "custom": "Modèles personnalisés",
+        "size": "{{size}} Mo"
+      },
+      "gpu": {
+        "title": "Couches GPU",
+        "description": "Nombre de couches déchargées sur le GPU (0 = CPU uniquement)"
+      },
+      "unloadTimeout": {
+        "title": "Délai de déchargement",
+        "description": "Décharger le modèle IA après cette période d'inactivité"
+      },
+      "external": {
+        "url": {
+          "title": "URL du serveur",
+          "description": "URL du serveur compatible OpenAI",
+          "placeholder": "http://localhost:8080/v1"
+        },
+        "apiKey": {
+          "title": "Clé API",
+          "description": "Clé API optionnelle pour le serveur",
+          "placeholder": "Optionnel"
+        },
+        "model": {
+          "title": "Modèle",
+          "description": "Modèle à utiliser sur le serveur",
+          "refresh": "Rafraîchir les modèles"
+        }
+      },
+      "prompt": {
+        "title": "Prompt",
+        "selectedPrompt": "Prompt sélectionné",
+        "createNew": "Créer nouveau",
+        "name": "Nom du prompt",
+        "instruction": "Instruction",
+        "instructionHint": "Utilisez ${output} là où la transcription doit être insérée",
+        "save": "Enregistrer",
+        "delete": "Supprimer"
+      },
+      "test": {
+        "title": "Test",
+        "input": "Collez une transcription pour tester",
+        "run": "Tester",
+        "running": "Traitement...",
+        "result": "Résultat"
       }
     },
     "history": {
@@ -551,6 +615,13 @@
   },
   "overlay": {
     "transcribing": "Transcription...",
-    "processing": "Traitement..."
+    "processing": "Traitement...",
+    "cleaning": "Nettoyage..."
+  },
+  "notifications": {
+    "localLlm": {
+      "loadFailed": "Échec du chargement du modèle IA",
+      "serverUnavailable": "Serveur IA local indisponible"
+    }
   }
 }
