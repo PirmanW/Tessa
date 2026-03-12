@@ -1065,3 +1065,136 @@ pub fn change_show_tray_icon_setting(app: AppHandle, enabled: bool) -> Result<()
 
     Ok(())
 }
+
+// Local LLM settings commands
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_enabled = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_mode_setting(
+    app: AppHandle,
+    mode: settings::LocalLlmMode,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_mode = mode;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_model_setting(app: AppHandle, model_id: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_model_id = Some(model_id);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_gpu_layers_setting(app: AppHandle, layers: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_gpu_layers = layers;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_unload_timeout_setting(
+    app: AppHandle,
+    timeout: settings::ModelUnloadTimeout,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_unload_timeout = timeout;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_external_url_setting(app: AppHandle, url: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_external_url = url;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_external_api_key_setting(
+    app: AppHandle,
+    api_key: String,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_external_api_key = Some(api_key);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_local_llm_external_model_setting(
+    app: AppHandle,
+    model: String,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_external_model = Some(model);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn add_local_llm_prompt(app: AppHandle, prompt: settings::LLMPrompt) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_prompts.push(prompt);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn update_local_llm_prompt(app: AppHandle, prompt: settings::LLMPrompt) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    if let Some(existing) = settings
+        .local_llm_prompts
+        .iter_mut()
+        .find(|p| p.id == prompt.id)
+    {
+        existing.name = prompt.name;
+        existing.prompt = prompt.prompt;
+        settings::write_settings(&app, settings);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_local_llm_prompt(app: AppHandle, prompt_id: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_prompts.retain(|p| p.id != prompt_id);
+    if settings.local_llm_selected_prompt_id.as_deref() == Some(&prompt_id) {
+        settings.local_llm_selected_prompt_id =
+            settings.local_llm_prompts.first().map(|p| p.id.clone());
+    }
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_local_llm_selected_prompt(app: AppHandle, prompt_id: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.local_llm_selected_prompt_id = Some(prompt_id);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
