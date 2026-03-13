@@ -130,6 +130,12 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
 
+    let llm_manager = Arc::new(
+        managers::llm::LlmManager::new(app_handle)
+            .expect("Failed to initialize LLM manager"),
+    );
+    app_handle.manage(llm_manager.clone());
+
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
     // after permissions are confirmed (on macOS) or after onboarding completes.
@@ -302,6 +308,26 @@ pub fn run(cli_args: CliArgs) {
         shortcut::change_keyboard_implementation_setting,
         shortcut::get_keyboard_implementation,
         shortcut::change_show_tray_icon_setting,
+        // Local LLM settings
+        shortcut::change_local_llm_enabled_setting,
+        shortcut::change_local_llm_mode_setting,
+        shortcut::change_local_llm_model_setting,
+        shortcut::change_local_llm_gpu_layers_setting,
+        shortcut::change_local_llm_unload_timeout_setting,
+        shortcut::change_local_llm_external_url_setting,
+        shortcut::change_local_llm_external_api_key_setting,
+        shortcut::change_local_llm_external_model_setting,
+        shortcut::add_local_llm_prompt,
+        shortcut::update_local_llm_prompt,
+        shortcut::delete_local_llm_prompt,
+        shortcut::set_local_llm_selected_prompt,
+        // Local LLM model commands
+        commands::llm::list_local_llm_models,
+        commands::llm::download_local_llm_model,
+        commands::llm::delete_local_llm_model,
+        commands::llm::import_local_llm_model,
+        commands::llm::test_local_llm,
+        commands::llm::fetch_local_llm_external_models,
         shortcut::handy_keys::start_handy_keys_recording,
         shortcut::handy_keys::stop_handy_keys_recording,
         trigger_update_check,

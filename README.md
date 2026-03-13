@@ -30,6 +30,7 @@ The process is entirely local:
 - Transcription uses your choice of models:
   - **Whisper models** (Small/Medium/Turbo/Large) with GPU acceleration when available
   - **Parakeet V3** - CPU-optimized model with excellent performance and automatic language detection
+- **Local AI post-processing** (optional): clean up and improve transcription output using a local LLM (GGUF models via llama.cpp) or an external OpenAI-compatible server — no cloud required
 - Works on Windows, macOS, and Linux
 
 ## Quick Start
@@ -56,6 +57,7 @@ Handy is built as a Tauri application combining:
 - **Core Libraries**:
   - `whisper-rs`: Local speech recognition with Whisper models
   - `transcription-rs`: CPU-optimized speech recognition with Parakeet models
+  - `llama-cpp-2`: Local LLM inference for text post-processing (GGUF models)
   - `cpal`: Cross-platform audio I/O
   - `vad-rs`: Voice Activity Detection
   - `rdev`: Global keyboard shortcuts and system events
@@ -100,6 +102,28 @@ handy --start-hidden --no-tray
 > ```bash
 > /Applications/Handy.app/Contents/MacOS/Handy --toggle-transcription
 > ```
+
+## Local AI Post-Processing
+
+Handy includes an optional local AI feature that cleans up and improves transcription output using a large language model — entirely on your machine.
+
+### How It Works
+
+1. Enable **Local AI** in Settings > Advanced > Experimental
+2. A new "Local AI" tab appears in the sidebar
+3. Choose between two modes:
+   - **Embedded**: Download and run GGUF models directly within Handy (powered by llama.cpp)
+   - **External**: Connect to a local OpenAI-compatible server (e.g., Ollama, llama-server, LM Studio)
+4. Configure a prompt template to control how the LLM processes your transcriptions
+5. Transcriptions are automatically cleaned up before being pasted
+
+### Features
+
+- **Model management**: Download, import, or delete GGUF models from the settings UI
+- **GPU acceleration**: Configure the number of GPU layers offloaded for faster inference
+- **Auto-unload**: Models are automatically unloaded from memory after a configurable idle timeout
+- **Custom prompts**: Create and manage multiple prompt templates for different use cases
+- **Test area**: Try your prompts on sample text before using them in production
 
 ## Known Issues & Current Limitations
 

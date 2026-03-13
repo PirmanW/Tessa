@@ -453,6 +453,116 @@ impl ShortcutAction for TranscribeAction {
                                 final_text = converted_text;
                             }
 
+                            // Apply local LLM cleanup if enabled (runs on every transcription)
+                            if settings.local_llm_enabled {
+                                let _ = ah.emit("local-llm-processing-started", ());
+
+                                let prompt_template = settings
+                                    .local_llm_selected_prompt_id
+                                    .as_ref()
+                                    .and_then(|id| {
+                                        settings.local_llm_prompts.iter().find(|p| &p.id == id)
+                                    })
+                                    .map(|p| p.prompt.clone());
+
+                                if let Some(template) = prompt_template {
+                                    let full_prompt =
+                                        template.replace("${output}", &final_text);
+
+                                    match settings.local_llm_mode {
+                                        crate::settings::LocalLlmMode::Embedded => {
+                                            let lm = ah
+                                                .state::<Arc<crate::managers::llm::LlmManager>>(
+                                                );
+                                            match lm
+                                                .ensure_loaded_and_generate(&full_prompt, 2048)
+                                            {
+                                                Ok(cleaned) => {
+                                                    debug!(
+                                                        "Local LLM cleanup: '{}' -> '{}'",
+                                                        final_text, cleaned
+                                                    );
+                                                    final_text = cleaned;
+                                                }
+                                                Err(e) => {
+                                                    error!(
+                                                        "Local LLM cleanup failed: {}",
+                                                        e
+                                                    );
+                                                    let _ = ah.emit(
+                                                        "local-llm-processing-failed",
+                                                        e.to_string(),
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        crate::settings::LocalLlmMode::External => {
+                                            let provider =
+                                                crate::settings::PostProcessProvider {
+                                                    id: "local_llm_external".to_string(),
+                                                    label: "Local LLM".to_string(),
+                                                    base_url: settings
+                                                        .local_llm_external_url
+                                                        .clone(),
+                                                    allow_base_url_edit: false,
+                                                    models_endpoint: Some(
+                                                        "/models".to_string(),
+                                                    ),
+                                                    supports_structured_output: false,
+                                                };
+                                            let api_key = settings
+                                                .local_llm_external_api_key
+                                                .clone()
+                                                .unwrap_or_default();
+                                            if let Some(model) =
+                                                &settings.local_llm_external_model
+                                            {
+                                                match crate::llm_client::send_chat_completion(
+                                                    &provider,
+                                                    api_key,
+                                                    model,
+                                                    full_prompt,
+                                                )
+                                                .await
+                                                {
+                                                    Ok(Some(cleaned)) => {
+                                                        debug!(
+                                                            "External LLM cleanup: '{}' -> '{}'",
+                                                            final_text, cleaned
+                                                        );
+                                                        final_text = cleaned;
+                                                    }
+                                                    Ok(None) => {
+                                                        warn!(
+                                                            "External LLM returned empty response"
+                                                        );
+                                                    }
+                                                    Err(e) => {
+                                                        error!(
+                                                            "External LLM cleanup failed: {}",
+                                                            e
+                                                        );
+                                                        let _ = ah.emit(
+                                                            "local-llm-processing-failed",
+                                                            e.to_string(),
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                let _ = ah.emit("local-llm-processing-completed", ());
+                            }
+
+                            // Track cleaned text for history
+                            let cleaned_text: Option<String> =
+                                if settings.local_llm_enabled && final_text != transcription {
+                                    Some(final_text.clone())
+                                } else {
+                                    None
+                                };
+
                             // Then apply LLM post-processing if this is the post-process hotkey
                             // Uses final_text which may already have Chinese conversion applied
                             if post_process {
@@ -490,6 +600,7 @@ impl ShortcutAction for TranscribeAction {
                                     .save_transcription(
                                         samples_clone,
                                         transcription_for_history,
+                                        cleaned_text,
                                         post_processed_text,
                                         post_process_prompt,
                                     )

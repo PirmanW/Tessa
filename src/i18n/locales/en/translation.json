@@ -12,6 +12,7 @@
     "models": "Models",
     "advanced": "Advanced",
     "postProcessing": "Post Process",
+    "localLlm": "Local AI",
     "history": "History",
     "debug": "Debug",
     "about": "About"
@@ -230,7 +231,8 @@
         "output": "Output",
         "transcription": "Transcription",
         "history": "History",
-        "experimental": "Experimental"
+        "experimental": "Experimental",
+        "localLlm": "Local AI"
       },
       "experimentalToggle": {
         "label": "Experimental Features",
@@ -382,6 +384,68 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
+      }
+    },
+    "localLlm": {
+      "title": "Local AI",
+      "mode": {
+        "label": "Mode",
+        "embedded": "Embedded",
+        "external": "External Server"
+      },
+      "model": {
+        "title": "Model",
+        "select": "Select Model",
+        "download": "Download",
+        "downloading": "Downloading...",
+        "delete": "Delete",
+        "import": "Import GGUF Model",
+        "noModels": "No models downloaded",
+        "recommended": "Recommended Models",
+        "custom": "Custom Models",
+        "size": "{{size}} MB"
+      },
+      "gpu": {
+        "title": "GPU Layers",
+        "description": "Number of layers offloaded to GPU (0 = CPU only)"
+      },
+      "unloadTimeout": {
+        "title": "Model Unload Timeout",
+        "description": "Unload the AI model after this period of inactivity"
+      },
+      "external": {
+        "url": {
+          "title": "Server URL",
+          "description": "URL of the OpenAI-compatible server",
+          "placeholder": "http://localhost:8080/v1"
+        },
+        "apiKey": {
+          "title": "API Key",
+          "description": "Optional API key for the server",
+          "placeholder": "Optional"
+        },
+        "model": {
+          "title": "Model",
+          "description": "Model to use on the server",
+          "refresh": "Refresh models"
+        }
+      },
+      "prompt": {
+        "title": "Prompt",
+        "selectedPrompt": "Selected Prompt",
+        "createNew": "Create New",
+        "name": "Prompt Name",
+        "instruction": "Instruction",
+        "instructionHint": "Use ${output} where the transcription should be inserted",
+        "save": "Save",
+        "delete": "Delete"
+      },
+      "test": {
+        "title": "Test",
+        "input": "Paste a transcription to test",
+        "run": "Test",
+        "running": "Processing...",
+        "result": "Result"
       }
     },
     "history": {
@@ -551,6 +615,13 @@
   },
   "overlay": {
     "transcribing": "Transcribing...",
-    "processing": "Processing..."
+    "processing": "Processing...",
+    "cleaning": "Cleaning..."
+  },
+  "notifications": {
+    "localLlm": {
+      "loadFailed": "Failed to load AI model",
+      "serverUnavailable": "Local AI server unavailable"
+    }
   }
 }
