@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
-import { commands } from "@/bindings";
+import { commands, type ModelUnloadTimeout } from "@/bindings";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { SettingContainer } from "@/components/ui/SettingContainer";
 import { Dropdown } from "@/components/ui";
@@ -263,9 +263,9 @@ export const LocalLlmModelSection: React.FC = () => {
           grouped={true}
         >
           <Dropdown
-            value={unloadTimeout}
-            onChange={(val) =>
-              updateSetting("local_llm_unload_timeout", val as any)
+            selectedValue={unloadTimeout}
+            onSelect={(val: string) =>
+              updateSetting("local_llm_unload_timeout", val as ModelUnloadTimeout)
             }
             options={unloadTimeoutOptions}
           />

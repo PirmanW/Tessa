@@ -81,8 +81,8 @@ export const LocalLlmPromptSection: React.FC = () => {
       <div className="flex flex-col gap-3 p-2">
         <div className="flex items-center gap-2">
           <Dropdown
-            value={selectedId}
-            onChange={handleSelectPrompt}
+            selectedValue={selectedId}
+            onSelect={handleSelectPrompt}
             options={prompts.map((p) => ({ value: p.id, label: p.name }))}
           />
           <button

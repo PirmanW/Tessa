@@ -79,9 +79,9 @@ export const LocalLlmExternalSection: React.FC = () => {
       >
         <div className="flex items-center gap-2">
           <Dropdown
-            value={model}
-            onChange={(val) =>
-              updateSetting("local_llm_external_model", val as any)
+            selectedValue={model}
+            onSelect={(val: string) =>
+              updateSetting("local_llm_external_model", val)
             }
             options={
               modelOptions.length > 0

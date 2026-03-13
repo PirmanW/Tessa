@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import type { AppSettings as Settings, AudioDevice } from "@/bindings";
+import type { AppSettings as Settings, AudioDevice, LocalLlmMode, ModelUnloadTimeout } from "@/bindings";
 import { commands } from "@/bindings";
 
 interface SettingsStore {
@@ -138,13 +138,13 @@ const settingUpdaters: {
   local_llm_enabled: (value) =>
     commands.changeLocalLlmEnabledSetting(value as boolean),
   local_llm_mode: (value) =>
-    commands.changeLocalLlmModeSetting(value as string),
+    commands.changeLocalLlmModeSetting(value as LocalLlmMode),
   local_llm_model_id: (value) =>
     commands.changeLocalLlmModelSetting(value as string),
   local_llm_gpu_layers: (value) =>
     commands.changeLocalLlmGpuLayersSetting(value as number),
   local_llm_unload_timeout: (value) =>
-    commands.changeLocalLlmUnloadTimeoutSetting(value as string),
+    commands.changeLocalLlmUnloadTimeoutSetting(value as ModelUnloadTimeout),
   local_llm_external_url: (value) =>
     commands.changeLocalLlmExternalUrlSetting(value as string),
   local_llm_external_api_key: (value) =>
