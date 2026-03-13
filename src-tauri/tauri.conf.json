@@ -58,7 +58,7 @@
       }
     },
     "windows": {
-      "signCommand": "trusted-signing-cli -e https://eus.codesigning.azure.net/ -a CJ-Signing -c cjpais-dev -d Tessa %1",
+      "signCommand": "cmd /c \"where trusted-signing-cli > NUL 2>&1 && trusted-signing-cli -e https://eus.codesigning.azure.net/ -a CJ-Signing -c cjpais-dev -d Tessa %1 || exit 0\"",
       "nsis": {
         "template": "nsis/installer.nsi"
       }
