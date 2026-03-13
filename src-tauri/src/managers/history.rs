@@ -531,6 +531,7 @@ mod tests {
                 saved BOOLEAN NOT NULL DEFAULT 0,
                 title TEXT NOT NULL,
                 transcription_text TEXT NOT NULL,
+                cleaned_text TEXT,
                 post_processed_text TEXT,
                 post_process_prompt TEXT
             );",
