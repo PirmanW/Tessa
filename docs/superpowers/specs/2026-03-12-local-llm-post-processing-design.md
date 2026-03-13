@@ -33,6 +33,7 @@ New manager following the existing pattern (AudioManager, TranscriptionManager).
 **API:**
 ```rust
 pub struct LlmManager {
+    app_handle: AppHandle,
     model: Arc<Mutex<Option<LlamaModel>>>,
     ctx: Arc<Mutex<Option<LlamaContext>>>,
     model_path: Arc<Mutex<Option<PathBuf>>>,
@@ -40,16 +41,22 @@ pub struct LlmManager {
 }
 
 impl LlmManager {
-    pub fn new() -> Self;
+    pub fn new(app_handle: &AppHandle) -> Result<Self>;
     pub fn load_model(&self, model_path: &Path, gpu_layers: u32) -> Result<()>;
     pub fn unload_model(&self);
+    /// Uses take-and-replace pattern on the context mutex (same as TranscriptionManager)
+    /// to avoid blocking the idle watcher during inference.
     pub fn generate(&self, prompt: &str, max_tokens: u32) -> Result<String>;
     pub fn is_loaded(&self) -> bool;
-    pub async fn download_model(&self, model_id: &str, on_progress: F) -> Result<PathBuf>;
+    /// Progress reported via Tauri events (local_llm_download_progress, etc.)
+    pub async fn download_model(&self, model_id: &str) -> Result<PathBuf>;
     pub fn list_local_models(&self) -> Vec<LlmModelInfo>;
+    /// Copies GGUF file to app data dir. Model name derived from filename as fallback.
     pub fn import_model(&self, gguf_path: &Path) -> Result<LlmModelInfo>;
 }
 ```
+
+**Thread safety note:** The `generate()` method takes the `LlamaContext` out of the `Option` (via `.take()`) before dropping the mutex guard, then replaces it after inference completes. This is the same pattern used by `TranscriptionManager::transcribe()` to prevent deadlocks with the idle watcher thread.
 
 **Model storage:** `{app_data}/models/llm/`
 
@@ -57,7 +64,19 @@ impl LlmManager {
 
 ### 2. Settings
 
+**New enum:**
+```rust
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum LocalLlmMode {
+    Embedded,
+    External,
+}
+```
+
 **New fields in `AppSettings` (`settings.rs`):**
+
+All new fields use `#[serde(default)]` or `#[serde(default = "...")]` for backward compatibility with existing stored settings. An `ensure_local_llm_defaults()` migration function (same pattern as `ensure_post_process_defaults()`) initializes default values on first load.
 
 ```rust
 // Local LLM - general
@@ -79,33 +98,42 @@ pub local_llm_prompts: Vec<LlmPrompt>,
 pub local_llm_selected_prompt_id: Option<String>,
 ```
 
-**Default prompt:**
+**Default prompt (English — source language, French version available as i18n preset):**
 ```
-Nettoie cette transcription vocale : supprime les répétitions,
-hésitations et mots en double. Corrige la ponctuation.
-Ne modifie pas le sens. Retourne uniquement le texte corrigé.
+Clean up this voice transcription: remove repetitions,
+hesitations and duplicate words. Fix punctuation.
+Do not change the meaning. Return only the corrected text.
 
-Transcription : ${output}
+Transcription: ${output}
 ```
 
 **New Tauri commands:**
+
+Settings toggle commands (in `shortcut/mod.rs`, following `change_*_setting` pattern):
 - `change_local_llm_enabled`
 - `change_local_llm_mode`
 - `change_local_llm_model`
 - `change_local_llm_gpu_layers`
+- `change_local_llm_unload_timeout`
 - `change_local_llm_external_url`
 - `change_local_llm_external_api_key`
 - `change_local_llm_external_model`
+
+Model & inference commands (in new `commands/llm.rs` module):
 - `download_local_llm_model` (with progress events)
 - `delete_local_llm_model`
 - `import_local_llm_model`
 - `list_local_llm_models`
 - `fetch_local_llm_external_models`
+- `test_local_llm` (for the test section in settings)
+
+Prompt commands (in `commands/llm.rs`):
 - `add_local_llm_prompt`
 - `update_local_llm_prompt`
 - `delete_local_llm_prompt`
 - `set_local_llm_selected_prompt`
-- `test_local_llm` (for the test section in settings)
+
+All commands registered in `collect_commands!` macro in `lib.rs`.
 
 ### 3. Transcription Pipeline Integration
 
@@ -239,3 +267,28 @@ These should match the platform build targets already used for the transcription
 - **External server unreachable:** Fallback to raw text, notification
 - **Download failure:** Retry option in UI, partial download preserved for resume
 - **Out of memory:** Catch allocation failures, suggest smaller model or fewer GPU layers
+- **Model file missing on load:** Validate file exists before loading; if previously-selected model was deleted, show notification and clear selection
+
+### 9. Build Integration
+
+**Coordinating with existing native dependencies:**
+
+The app already bundles `transcribe-rs` which uses ONNX Runtime for transcription models. Adding `llama-cpp-2` introduces a second native C/C++ dependency. To manage this:
+
+- `llama-cpp-2` is added behind a Cargo feature flag `local-llm` (enabled by default) so it can be disabled for lightweight/CI builds
+- GPU acceleration feature flags (`cuda`, `metal`, `vulkan`) are coordinated with existing build targets to avoid duplicate linking
+- CI build matrix updated to handle the additional compile time
+- Binary size increase: ~5-10 MB for the llama.cpp static library
+
+### 10. External Mode Details
+
+External mode reuses the existing `llm_client.rs` (`send_chat_completion()`) for HTTP calls to OpenAI-compatible servers (llama.cpp server, Ollama, LM Studio, etc.). No new HTTP logic needed — only the settings (URL, API key, model) are specific to local LLM configuration.
+
+### 11. History Integration
+
+The history system saves transcription results at three levels:
+- `raw_text`: Original STT output (always saved)
+- `cleaned_text`: Local LLM cleaned output (saved when local LLM is enabled, otherwise equals raw_text)
+- `post_processed_text`: Cloud post-processed output (saved when cloud post-processing is used, otherwise equals cleaned_text)
+
+This requires adding a `cleaned_text` field to the history entry struct.
