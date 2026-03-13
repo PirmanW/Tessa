@@ -23,6 +23,11 @@ bun run lint              # ESLint for frontend
 bun run lint:fix          # ESLint with auto-fix
 bun run format            # Prettier + cargo fmt
 bun run format:check      # Check formatting without changes
+
+# Testing
+bun run test:playwright   # Run Playwright e2e tests
+bun run test:playwright:ui  # Playwright with interactive UI
+cd src-tauri && cargo test  # Run Rust unit tests (note: requires mock swap in CI, see .github/workflows/test.yml)
 ```
 
 **Model Setup (Required for Development):**
@@ -80,6 +85,7 @@ All user-facing strings must use i18next translations. ESLint enforces this (no 
 
 1. Add key to `src/i18n/locales/en/translation.json`
 2. Use in component: `const { t } = useTranslation(); t('key.path')`
+3. Run `bun run check:translations` to verify all locales have the new key
 
 **File structure:**
 
